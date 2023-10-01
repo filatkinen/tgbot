@@ -15,6 +15,10 @@ func (c *Commander) ListCommand(message *tgbotapi.Message) {
 		pr.WriteString("\n")
 	}
 	msg := tgbotapi.NewMessage(message.Chat.ID, pr.String())
+
+	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Next Page", "some data"),
+	))
 	_, err := c.bot.Send(msg)
 	if err != nil {
 		log.Printf("got error while sending message: %s", err)

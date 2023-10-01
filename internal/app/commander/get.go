@@ -17,6 +17,10 @@ func (c *Commander) Get(message *tgbotapi.Message) {
 	}
 
 	args := message.CommandArguments()
+	if args == "" {
+		send("Wrong using of get command. Use: /get ProductNumber")
+		return
+	}
 
 	num, err := strconv.Atoi(args)
 	if err != nil {
@@ -36,5 +40,5 @@ func (c *Commander) Get(message *tgbotapi.Message) {
 
 func init() {
 	registeredCommands["get"] = command{f: (*Commander).Get,
-		description: "get (TBD)"}
+		description: "get product Title"}
 }
