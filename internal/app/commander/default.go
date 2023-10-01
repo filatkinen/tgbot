@@ -8,7 +8,7 @@ import (
 
 func (c *Commander) DefaultBehavior(message *tgbotapi.Message) {
 	//log.Printf("[%s] %s", message.From.UserName, message.Text)
-	msg := tgbotapi.NewMessage(message.Chat.ID, "You wrote:"+message.Text)
+	msg := tgbotapi.NewMessage(message.Chat.ID, "You wrote: \""+message.Text+`"`)
 	_, err := c.bot.Send(msg)
 	if err != nil {
 		log.Printf("got error while sending message: %s", err)

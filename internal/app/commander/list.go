@@ -20,3 +20,8 @@ func (c *Commander) ListCommand(message *tgbotapi.Message) {
 		log.Printf("got error while sending message: %s", err)
 	}
 }
+
+func init() {
+	registeredCommands["list"] = command{f: (*Commander).ListCommand,
+		description: "get products list"}
+}
