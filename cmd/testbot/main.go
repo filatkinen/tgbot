@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
@@ -43,16 +43,20 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates, err := bot.GetUpdatesChan(u)
+	updates := bot.GetUpdatesChan(u)
 
 	fmt.Print(".")
 	for update := range updates {
+
+		fmt.Printf("UpdateID: %d\n", update.UpdateID)
+		fmt.Printf("%+v\n", update)
+
 		if update.CallbackQuery != nil {
 			fmt.Print(update)
 
-			bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Data: "+update.CallbackQuery.Data)
 
-			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data))
+			bot.Send(msg)
 		}
 		if update.Message != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
