@@ -27,10 +27,12 @@ func main() {
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbotapi.NewUpdate(-10)
-	u.Timeout = 60
-
-	updates := bot.GetUpdatesChan(u)
+	updates := bot.GetUpdatesChan(tgbotapi.UpdateConfig{
+		Offset:         0,
+		Limit:          0,
+		Timeout:        60,
+		AllowedUpdates: nil,
+	})
 
 	productService := product.NewService()
 
