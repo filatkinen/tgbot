@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
@@ -33,22 +32,28 @@ func main() {
 
 	bot.Debug = true
 
+	bot.Debug = true
+
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbotapi.NewUpdate(-100)
+	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
-
-	//time.Sleep(time.Millisecond * 500)
-	//for len(updates) != 0 {
-	//	<-updates
-	//}
 
 	for update := range updates {
 		if update.Message == nil {
 			continue
 		}
-		fmt.Printf("%+v", update.Message)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+
+		switch update.Message.Text {
+		case "open":
+			msg.ReplyMarkup = numericKeyboard
+		case "close":
+			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+		}
+
+		bot.Send(msg)
 	}
 }

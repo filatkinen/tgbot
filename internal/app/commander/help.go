@@ -16,10 +16,12 @@ func (c *Commander) HelpCommand(message *tgbotapi.Message) {
 		helpMessage.WriteString("\n")
 	}
 	msg := tgbotapi.NewMessage(message.Chat.ID, helpMessage.String())
-	_, err := c.bot.Send(msg)
+	m, err := c.bot.Send(msg)
 	if err != nil {
 		log.Printf("got error while sending message: %s", err)
 	}
+	log.Printf("\n-----\nreturn message: %+v\n-----", m)
+
 }
 
 func init() {

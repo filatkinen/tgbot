@@ -10,10 +10,11 @@ import (
 func (c *Commander) Get(message *tgbotapi.Message) {
 	send := func(s string) {
 		msg := tgbotapi.NewMessage(message.Chat.ID, s)
-		_, err := c.bot.Send(msg)
+		m, err := c.bot.Send(msg)
 		if err != nil {
 			log.Printf("got error while sending message: %s", err)
 		}
+		log.Printf("\n-----\nreturn message: %+v\n-----", m)
 	}
 
 	args := message.CommandArguments()

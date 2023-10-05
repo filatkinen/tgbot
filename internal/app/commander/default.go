@@ -13,4 +13,5 @@ func (c *Commander) DefaultBehavior(message *tgbotapi.Message) {
 	if err != nil {
 		log.Printf("got error while sending message: %s", err)
 	}
+	log.Printf("\n-----\nreturn message: %+v\n-----", msg)
 }

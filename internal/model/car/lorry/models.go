@@ -8,5 +8,5 @@ type Lorry struct {
 }
 
 func (l Lorry) String() string {
-	return fmt.Sprintf("ID -%d, Модель-%s", l.Model)
+	return fmt.Sprintf("ID -%d, Модель-%s", l.ID, l.Model)
 }

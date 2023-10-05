@@ -30,11 +30,19 @@ func (c *Commander) HandlerMessage(update tgbotapi.Update) {
 	}()
 
 	if update.CallbackQuery != nil {
+		callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
+		callback.Text = ""
+
+		if _, err := c.bot.Request(callback); err != nil {
+			log.Printf("got error while sending callback message: %s", err)
+		}
+
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Data: "+update.CallbackQuery.Data)
 		_, err := c.bot.Send(msg)
 		if err != nil {
 			log.Printf("got error while sending message: %s", err)
 		}
+		log.Printf("\n-----\nreturn message: %+v\n-----", msg)
 		return
 	}
 	if update.Message == nil {

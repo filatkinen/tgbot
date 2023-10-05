@@ -28,10 +28,11 @@ type DummyLorryService struct {
 	lock       sync.RWMutex
 }
 
-func NewDummyLorryService() *DummyLorryService {
+func NewDummyLorryService(a ...int) *DummyLorryService {
 	return &DummyLorryService{
 		lorries:    []lorry.Lorry{},
-		lorriesIDx: make(map[uint64]uint64)}
+		lorriesIDx: make(map[uint64]uint64),
+		lock:       sync.RWMutex{}}
 }
 
 func (l *DummyLorryService) Describe(lorryID uint64) (lorry.Lorry, error) {
