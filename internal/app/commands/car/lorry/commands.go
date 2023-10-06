@@ -1,6 +1,8 @@
 package lorry
 
 import (
+	"errors"
+	"fmt"
 	model "github.com/filatkinen/tgbot/internal/model/car/lorry"
 	"github.com/filatkinen/tgbot/internal/service/car/lorry"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -8,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+const ListingCount = 3
 
 type LorryCommander interface {
 	Help(inputMsg *tgbotapi.Update)
@@ -25,7 +29,18 @@ type DummyLorryCommander struct {
 }
 
 func NewLorryCommander(bot *tgbotapi.BotAPI, service lorry.LorryService) LorryCommander {
-	return DummyLorryCommander{bot: bot, service: service}
+	d := DummyLorryCommander{bot: bot, service: service}
+	_, _ = d.service.Create(model.Lorry{Model: "One"})
+	_, _ = d.service.Create(model.Lorry{Model: "Two"})
+	_, _ = d.service.Create(model.Lorry{Model: "Three"})
+	_, _ = d.service.Create(model.Lorry{Model: "Thor"})
+	_, _ = d.service.Create(model.Lorry{Model: "Five"})
+	_, _ = d.service.Create(model.Lorry{Model: "Six"})
+	_, _ = d.service.Create(model.Lorry{Model: "Seven"})
+	_, _ = d.service.Create(model.Lorry{Model: "Eight"})
+	_, _ = d.service.Create(model.Lorry{Model: "Nine"})
+	_, _ = d.service.Create(model.Lorry{Model: "Ten"})
+	return &d
 }
 
 func (d DummyLorryCommander) Help(inputMsg *tgbotapi.Update) {
@@ -67,13 +82,103 @@ func (d DummyLorryCommander) Get(inputMsg *tgbotapi.Update) {
 }
 
 func (d DummyLorryCommander) List(inputMsg *tgbotapi.Update) {
-	//TODO implement me
-	panic("implement me")
+	if inputMsg.Message != nil {
+		lorries, err := d.service.List(1, ListingCount)
+		if err != nil {
+			d.send(inputMsg.Message, err.Error())
+			return
+		}
+		if len(lorries) == 0 {
+			d.send(inputMsg.Message, "No records...")
+		}
+		sb := strings.Builder{}
+		for _, l := range lorries {
+			sb.WriteString(l.String())
+			sb.WriteString("\n")
+		}
+
+		msg := tgbotapi.NewMessage(inputMsg.Message.Chat.ID, sb.String())
+		kb := d.keyboardPrevNext("List", 1)
+		msg.ReplyMarkup = kb
+		_, err = d.bot.Send(msg)
+		if err != nil {
+			log.Printf("got error while sending message: %s", err)
+		}
+	} else if inputMsg.CallbackQuery != nil {
+		fields := strings.Fields(inputMsg.CallbackQuery.Data)
+		if len(fields) != 3 {
+			return
+		}
+		idx, err := strconv.Atoi(fields[2])
+		if err != nil {
+			log.Printf("got error converting to int: %s", err)
+			return
+		}
+		switch fields[1] {
+		case "prev":
+			idx -= ListingCount
+		case "next":
+			idx += ListingCount
+		}
+
+		lorries, err := d.service.List(uint64(idx), ListingCount)
+		if err != nil && errors.Is(err, lorry.ErrWrongIndexSlice) {
+			return
+		}
+		if len(lorries) == 0 {
+			d.send(inputMsg.CallbackQuery.Message, "No records...")
+		}
+		sb := strings.Builder{}
+		for _, l := range lorries {
+			sb.WriteString(l.String())
+			sb.WriteString("\n")
+		}
+
+		msg := tgbotapi.NewMessage(inputMsg.CallbackQuery.Message.Chat.ID, sb.String())
+		kb := d.keyboardPrevNext("List", idx)
+		msg.ReplyMarkup = kb
+		_, err = d.bot.Send(msg)
+		if err != nil {
+			log.Printf("got error while sending message: %s", err)
+		}
+		return
+	}
 }
 
+func (d DummyLorryCommander) keyboardPrevNext(prefix string, firstIdx int) tgbotapi.InlineKeyboardMarkup {
+	data1 := prefix + " prev " + strconv.Itoa(firstIdx)
+	data2 := prefix + " next " + strconv.Itoa(firstIdx)
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("<<", data1),
+			tgbotapi.NewInlineKeyboardButtonData(">>", data2),
+		),
+	)
+	return kb
+}
 func (d DummyLorryCommander) Delete(inputMsg *tgbotapi.Update) {
-	//TODO implement me
-	panic("implement me")
+	if inputMsg.Message == nil {
+		return
+	}
+
+	args := inputMsg.Message.CommandArguments()
+	if args == "" {
+		d.send(inputMsg.Message, "Wrong using of get command. Use: /delete_car_lorry ID")
+		return
+	}
+
+	id, err := strconv.Atoi(args)
+	if err != nil {
+		d.send(inputMsg.Message, "Wrong number format of ID")
+		return
+	}
+	_, err = d.service.Remove(uint64(id))
+	if err != nil {
+		d.send(inputMsg.Message, err.Error())
+		return
+	}
+	d.send(inputMsg.Message, fmt.Sprintf("Deleted lorry with ID: %d", id))
 }
 
 func (d DummyLorryCommander) New(inputMsg *tgbotapi.Update) {
@@ -99,8 +204,40 @@ func (d DummyLorryCommander) New(inputMsg *tgbotapi.Update) {
 }
 
 func (d DummyLorryCommander) Edit(inputMsg *tgbotapi.Update) {
-	//TODO implement me
-	panic("implement me")
+	if inputMsg.Message == nil {
+		return
+	}
+	args := inputMsg.Message.CommandArguments()
+	argsSlice := strings.Fields(args)
+	if args == "" || len(argsSlice) != 2 {
+		d.send(inputMsg.Message, "Wrong using of get command. Use: /edit_car_lorry ID Name")
+		return
+	}
+
+	id, err := strconv.Atoi(argsSlice[0])
+	if err != nil {
+		d.send(inputMsg.Message, "Wrong number format of ID")
+		return
+	}
+
+	oldLorry, err := d.service.Describe(uint64(id))
+	if err != nil {
+		d.send(inputMsg.Message, err.Error())
+		return
+	}
+	err = d.service.Update(uint64(id), model.Lorry{Model: argsSlice[1]})
+	if err != nil {
+		d.send(inputMsg.Message, err.Error())
+		return
+	}
+	newLorry, err := d.service.Describe(uint64(id))
+	if err != nil {
+		d.send(inputMsg.Message, err.Error())
+		return
+	}
+
+	d.send(inputMsg.Message, fmt.Sprintf("Success changing Old Lorry: %s, new Lorry:%s",
+		oldLorry.String(), newLorry.String()))
 }
 
 func (d DummyLorryCommander) send(inputMsg *tgbotapi.Message, out string) {

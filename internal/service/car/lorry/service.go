@@ -23,22 +23,28 @@ type LorryService interface {
 type DummyLorryService struct {
 	lorries []lorry.Lorry
 	// map with pointer to the idx element of slices by index element.
-	lorriesIDx map[uint64]uint64
-	inc        uint64
-	lock       sync.RWMutex
+	inc  uint64
+	lock sync.RWMutex
 }
 
 func NewDummyLorryService(a ...int) *DummyLorryService {
 	return &DummyLorryService{
-		lorries:    []lorry.Lorry{},
-		lorriesIDx: make(map[uint64]uint64),
-		lock:       sync.RWMutex{}}
+		lorries: []lorry.Lorry{},
+		lock:    sync.RWMutex{}}
 }
 
 func (l *DummyLorryService) Describe(lorryID uint64) (lorry.Lorry, error) {
 	l.lock.RLock()
 	defer l.lock.RUnlock()
-	idx, ok := l.lorriesIDx[lorryID]
+	ok := false
+	idx := 0
+	for k := range l.lorries {
+		if l.lorries[k].ID == lorryID {
+			ok = true
+			idx = k
+			break
+		}
+	}
 	if !ok {
 		return lorry.Lorry{}, fmt.Errorf("%w, id:%d", ErrWrongIndexValue, lorryID)
 	}
@@ -46,8 +52,12 @@ func (l *DummyLorryService) Describe(lorryID uint64) (lorry.Lorry, error) {
 }
 
 func (l *DummyLorryService) List(cursor uint64, limit uint64) ([]lorry.Lorry, error) {
-	l.lock.RUnlock()
+	l.lock.RLock()
 	defer l.lock.RUnlock()
+
+	if len(l.lorries) == 0 {
+		return []lorry.Lorry{}, nil
+	}
 
 	if cursor < 1 || cursor > uint64(len(l.lorries)) {
 		return nil, fmt.Errorf("%w, id:%d", ErrWrongIndexSlice, cursor)
@@ -69,7 +79,6 @@ func (l *DummyLorryService) Create(lorryIn lorry.Lorry) (uint64, error) {
 		Model: lorryIn.Model,
 		ID:    l.inc,
 	})
-	l.lorriesIDx[l.inc] = uint64(len(l.lorries) - 1)
 	return l.inc, nil
 }
 
@@ -77,7 +86,15 @@ func (l *DummyLorryService) Update(lorryID uint64, lorryIn lorry.Lorry) error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	idx, ok := l.lorriesIDx[lorryID]
+	ok := false
+	idx := 0
+	for k := range l.lorries {
+		if l.lorries[k].ID == lorryID {
+			ok = true
+			idx = k
+			break
+		}
+	}
 	if !ok {
 		return fmt.Errorf("%w, id:%d", ErrWrongIndexValue, lorryID)
 	}
@@ -90,12 +107,18 @@ func (l *DummyLorryService) Remove(lorryID uint64) (bool, error) {
 	l.lock.Lock()
 	l.lock.Unlock()
 
-	idx, ok := l.lorriesIDx[lorryID]
+	ok := false
+	idx := 0
+	for k := range l.lorries {
+		if l.lorries[k].ID == lorryID {
+			ok = true
+			idx = k
+			break
+		}
+	}
 	if !ok {
 		return false, fmt.Errorf("%w, id:%d", ErrWrongIndexValue, lorryID)
 	}
-
-	delete(l.lorriesIDx, lorryID)
 	l.lorries = append(l.lorries[0:idx], l.lorries[idx+1:]...)
 
 	return true, nil

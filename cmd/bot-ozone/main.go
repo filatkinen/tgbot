@@ -76,6 +76,8 @@ func HandlerMessage(bot *tgbotapi.BotAPI, commander commander.LorryCommander, up
 			commander.Edit(update)
 		case "new_car_lorry":
 			commander.New(update)
+		case "delete_car_lorry":
+			commander.Delete(update)
 		}
 	}
 }
