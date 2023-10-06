@@ -133,10 +133,11 @@ func (d DummyLorryCommander) List(inputMsg *tgbotapi.Update) {
 			sb.WriteString(l.String())
 			sb.WriteString("\n")
 		}
-
-		msg := tgbotapi.NewMessage(inputMsg.CallbackQuery.Message.Chat.ID, sb.String())
+		msg := tgbotapi.NewEditMessageText(inputMsg.CallbackQuery.Message.Chat.ID,
+			inputMsg.CallbackQuery.Message.MessageID, sb.String())
+		//msg := tgbotapi.NewMessage(inputMsg.CallbackQuery.Message.Chat.ID, sb.String())
 		kb := d.keyboardPrevNext("List", idx)
-		msg.ReplyMarkup = kb
+		msg.ReplyMarkup = &kb
 		_, err = d.bot.Send(msg)
 		if err != nil {
 			log.Printf("got error while sending message: %s", err)

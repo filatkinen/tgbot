@@ -18,7 +18,7 @@ var defaultMessage string
 func main() {
 	_ = godotenv.Load()
 
-	apiKey := os.Getenv("EXAMPLE_TELEGRAM_BOT_TOKEN")
+	apiKey := os.Getenv("BOTAPIKEY")
 	if apiKey == "" {
 		log.Printf("env BOTAPIKEY is not set")
 		return
@@ -27,7 +27,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
-	telegramBotToken := os.Getenv("EXAMPLE_TELEGRAM_BOT_TOKEN")
+	telegramBotToken := apiKey
 
 	opts := []bot.Option{
 		bot.WithDebug(),
