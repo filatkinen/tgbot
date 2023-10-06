@@ -1,13 +1,16 @@
 package main
 
 import (
-	botcommander "github.com/filatkinen/tgbot/internal/app/commander"
-	"github.com/filatkinen/tgbot/internal/service/product"
+	commander "github.com/filatkinen/tgbot/internal/app/commands/car/lorry"
+	"github.com/filatkinen/tgbot/internal/service/car/lorry"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strings"
 )
+
+// Send any text message to the bot after the bot has been started
 
 func main() {
 	_ = godotenv.Load()
@@ -34,11 +37,47 @@ func main() {
 		AllowedUpdates: nil,
 	})
 
-	productService := product.NewService()
+	productService := lorry.NewDummyLorryService()
 
-	commander := botcommander.NewCommander(bot, productService)
+	dummycommander := commander.NewLorryCommander(bot, productService)
 
 	for update := range updates {
-		commander.HandlerMessage(update)
+		HandlerMessage(bot, dummycommander, &update)
+	}
+}
+
+func HandlerMessage(bot *tgbotapi.BotAPI, commander commander.LorryCommander, update *tgbotapi.Update) {
+	defer func() {
+		if panicValue := recover(); panicValue != nil {
+			log.Printf("recovered from panic: %v", panicValue)
+		}
+	}()
+
+	switch {
+	case update.CallbackQuery != nil:
+		callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "")
+
+		if _, err := bot.Request(callback); err != nil {
+			log.Printf("got error while sending callback message: %s", err)
+		}
+		switch {
+		case strings.HasPrefix(update.CallbackQuery.Data, "List"):
+			commander.List(update)
+		}
+	case update.Message != nil && update.Message.IsCommand():
+		switch update.Message.Command() {
+		case "list_car_lorry":
+			commander.List(update)
+		case "help_car_lorry":
+			commander.Help(update)
+		case "get_car_lorry":
+			commander.Get(update)
+		case "edit_car_lorry":
+			commander.Edit(update)
+		case "new_car_lorry":
+			commander.New(update)
+		case "delete_car_lorry":
+			commander.Delete(update)
+		}
 	}
 }
